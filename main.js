@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @module gdeploy
- * 
+ *
  * @license Unlicense
  */
 const connect = require('node-firefox-connect')
@@ -15,12 +15,16 @@ const DEBUGGER_PORT = process.env['DEBUGGER_PORT'] || 6000
 const libCache = {manager: null, client: null}
 
 function reportError(err) {
-  console.error(err) 
+  console.error(err)
   process.exit(1)
 }
 
 function exitApp() {
   process.exit(0)
+}
+
+function parseManifest(manifestPath) {
+  return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 }
 
 function getRawAppManager() {
@@ -55,7 +59,8 @@ function list() {
 function install(dirPath) {
   return new Promise(async (resolve, reject) => {
     let manager = await getRawAppManager()
-    installApp({appPath: path.resolve(dirPath), client: libCache.client})
+    let id = parseManifest(`${dirPath}/manifest.webapp`)["origin"].replace('app://', '')
+    installApp({appPath: path.resolve(dirPath), client: libCache.client, id})
       .then(function(appId) {
         resolve(appId)
       }, function(err) {
@@ -65,7 +70,7 @@ function install(dirPath) {
 }
 
 function uninstall(manifestUrl) {
-  return new Promise(async (resolve, reject) => { 
+  return new Promise(async (resolve, reject) => {
     let manager = await getRawAppManager()
     manager.uninstall(manifestUrl, function(err, apps) {
       if(err) reject(err)
@@ -75,7 +80,7 @@ function uninstall(manifestUrl) {
 }
 
 function start(manifestUrl) {
-  return new Promise(async (resolve, reject) => { 
+  return new Promise(async (resolve, reject) => {
     let manager = await getRawAppManager()
     manager.launch(manifestUrl, function(err, apps) {
       if(err) reject(err)
@@ -85,7 +90,7 @@ function start(manifestUrl) {
 }
 
 function stop(manifestUrl) {
-  return new Promise(async (resolve, reject) => { 
+  return new Promise(async (resolve, reject) => {
     let manager = await getRawAppManager()
     let client = libCache.client
     manager.close(manifestUrl, function(err, apps) {
@@ -96,7 +101,7 @@ function stop(manifestUrl) {
 }
 
 function evaluateJsInAppContext(manifestUrl, js) {
-  return new Promise(async (resolve, reject) => { 
+  return new Promise(async (resolve, reject) => {
     let manager = await getRawAppManager()
     manager.getApp(manifestUrl, function(err, app) {
       if(err) {
